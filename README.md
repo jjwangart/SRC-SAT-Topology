@@ -1,79 +1,136 @@
-🧠 SRC-SAT-Topology
+# 🧠 SRC-SAT-Topology
 
-Predict SAT satisfiability using structural topology + SRC (Structure-Rich Classifiers) — without full search.
+![Python](https://img.shields.io/badge/python-3.8%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-research-orange)
+![Topic](https://img.shields.io/badge/topic-topology%20%7C%20complexity-purple)
 
-🔥 Key Result
+> Predict SAT satisfiability using **structural topology** — without solving.
 
-🔥 Result: Predict SAT satisfiability without solving — achieves 0.84 accuracy using only structure topology (baseline = 0.50).
+---
 
-Even without calling a SAT solver at inference time, SRC-SAT predicts satisfiability purely from graph structure, reaching performance far above the random baseline (0.50).
+## ⏱️ TL;DR — Why this Repo Matters
 
-📜 Overview
+- **SAT normally requires NP-hard search** 🔍
+- Here, we **predict SAT/UNSAT purely from structure**, using **graph Laplacian eigenvalues**.
+- Achieves **0.84 accuracy** (baseline random = 0.50), stable up to **30,000 instances × 10 runs**.
 
-This repository implements SRC-SAT-Topology, a lightweight spectral–topology classifier that predicts whether a random 3-SAT instance is satisfiable by analyzing only its variable–clause interaction graph, without running full search during inference.
+This repository demonstrates that **structure alone** encodes strong predictive signal — supporting the broader theory of **SRC: Structure-Rich Computing**.
 
-This project is part of the broader research direction:
+---
 
-SRC: Structure-Rich Computing – A Computational Paradigm for Dimensional Collapse and Structure-Level Inference
+## 📊 Experiment — Convergence Curve (10× per N)
 
-Core idea:
+| Sample Size (N) | Mean Accuracy |
+|-----------------|---------------|
+| 5,000           | 0.818         |
+| 10,000          | 0.840         |
+| 30,000          | 0.837         |
 
-Turn each 3-SAT instance into a variable interaction graph
+Baseline (random): **0.50**
 
-Compute a spectral fingerprint (eigenvalues of the normalized Laplacian)
+<img src="assets/benchmark_convergence.png" width="480" alt="Benchmark Convergence">
 
-Use a simple classifier on top of these spectral features to approximate SAT/UNSAT
+---
 
-📊 Experimental Results — Convergence Curve
+## 🧪 Method Summary (How it Works)
 
-All reported numbers are averaged over 10 independent runs (10 seeds) per sample size.
+**Transform 3-SAT → Graph → Spectrum → Predict**
 
-<img src="assets/benchmark_convergence.png" width="480">
-Sample Size (N)	Mean Accuracy
-5,000	0.818
-10,000	0.840
-30,000	0.837
+```text
+3-SAT clauses
+   ↓
+Variable-Interaction Graph G = (V,E)
+   ↓
+Normalized Laplacian  𝓛 = I − D⁻¹ᐟ² A D⁻¹ᐟ²
+   ↓
+Top-k eigenvalues  λ₁…λₖ  →  "structural fingerprint"
+   ↓
+Logistic Regression → SAT / UNSAT
 
-Baseline (random guess): 0.50
+```
 
-The curve shows that the SRC-SAT-Topology classifier:
+**Why it matters:**
+We show that SAT complexity correlates with graph topology, enabling inference **without** running a solver.
 
-Stabilizes around ≈0.84 accuracy as N grows
+---
 
-Is structurally robust: no catastrophic degradation at larger sample sizes
+## 🚀 Run Locally
 
-Works purely from topology + spectrum, without using solver internals at test time
+```bash
+git clone [https://github.com/jjwangart/SRC-SAT-Topology.git](https://github.com/jjwangart/SRC-SAT-Topology.git)
+cd SRC-SAT-Topology
+pip install -r requirements.txt
 
-🧩 Method Summary
+# Run the main experiment
+python src/main.py
 
-At a high level:
+```
 
-3-SAT Generation
+> **⏳ Runtime note**: 30k×10-round experiments may take 10–40min depending on CPU.
 
-Random 3-SAT formulas with fixed number of variables (e.g., 50)
+---
 
-Clause-to-variable ratio sampled in a critical range (e.g., 3.5–5.5)
+## 📁 Repository Layout
 
-Topology Construction
+```text
+SRC-SAT-Topology/
+├── assets/
+│   └── benchmark_convergence.png
+├── docs/
+│   ├── SRC_Theory_Definition.md
+│   └── SRC_Technical_Report.pdf
+├── src/
+│   ├── main.py
+│   ├── generator.py
+│   └── topology_utils.py
+├── experiments/
+│   └── tutorial_notebook.ipynb  (planned)
+├── LICENSE
+├── README.md
+└── requirements.txt
 
-Build an undirected graph over variables
+```
 
-Add edges between variables that co-occur in the same clause
+---
 
-This yields a variable interaction graph capturing structural difficulty
+## 📚 Theory Link (SRC)
 
-Spectral Fingerprint (SRC Topology Kernel)
+**SRC = Structure-Rich Computing**
 
-Compute the normalized Laplacian 
-𝐿
-L of the graph
+Hypothesis: *Computation is governed by structure kernels (𝓚) independent of symbol-level content.*
 
-Extract top-k eigenvalues (e.g., 30) as a “fingerprint” of the instance
+More formal definitions forthcoming in:
 
-This acts as a low-dimensional structure kernel for SRC
+* `docs/SRC_Theory_Definition.md`
+* `docs/SRC_Technical_Report.pdf`
 
-Classifier
+---
 
-Train a simple Logistic Regression on these fingerprints
+## 🧾 Citation
 
-Evaluate test accuracy on held-out SAT / UNSAT labels
+If you use this code or ideas in your research, please cite:
+
+```bibtex
+@misc{wang2025srcsattopology,
+  title  = {SRC-SAT-Topology: Predicting SAT Satisfiability from Structural Topology},
+  author = {Wang, Zijian},
+  year   = {2025},
+  howpublished = {\url{[https://github.com/jjwangart/SRC-SAT-Topology](https://github.com/jjwangart/SRC-SAT-Topology)}},
+  note   = {Part of SRC — Structure-Rich Computing}
+}
+
+```
+
+---
+
+## 🛣️ Roadmap
+
+* [x] Full-scale reproducibility test (5k–30k, 10× seeds)
+* [ ] Interactive Colab notebook
+* [ ] Extend SRC-Topology to alpha-fold-style protein graphs
+* [ ] Integrate spectral kernel with LLM-based SAT guidance
+
+```
+
+```
