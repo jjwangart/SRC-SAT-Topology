@@ -17,6 +17,8 @@ This repository is part of the research direction:
 
 > **SRC: Structure-Rich Computing — A paradigm for dimensional collapse, structural priors, and non-algorithmic inference.**
 
+**🔥 Result:** Predict SAT satisfiability *without solving* — achieves **0.84 accuracy** using only structure topology (baseline = 0.50).
+
 ---
 
 ## 📊 Experimental Results — Convergence Curve
