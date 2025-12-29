@@ -1,0 +1,5 @@
+numpy
+networkx
+python-sat
+scikit-learn
+matplotlib
