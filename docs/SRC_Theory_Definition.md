@@ -3,77 +3,125 @@
 > **"Computation is the transformation of structure. If we capture the structure, we capture the computation."**
 
 ## 1. The Core Hypothesis: Dimensional Collapse
+
 Traditional computational complexity theory treats logic problems (like 3-SAT) as symbolic manipulations in a high-dimensional combinatorial space. The **SRC (Structure-Rich Computing)** paradigm proposes a fundamental shift:
 
-**Hypothesis (The Topological Prior):**
-The computational hardness and satisfiability of a logical system are encoded in the **low-dimensional topological manifold** of its variable interactions. By projecting the high-dimensional logic space onto a lower-dimensional spectral domain, we can perform probabilistic inference with $P$-time complexity that approximates $NP$-hard properties.
+**Hypothesis (Topological Prior):**  
+The computational hardness and satisfiability of a logical system are encoded in the **low-dimensional topological manifold** of its variable interactions. By projecting the high-dimensional logic space onto a lower-dimensional spectral domain, we can perform probabilistic inference with polynomial-time complexity that approximates NP-hard properties.
 
 ---
 
 ## 2. Formal Definitions
 
-### 2.1 The Problem Space
-Let $\mathcal{F}$ be a boolean formula in Conjunctive Normal Form (CNF) with $n$ variables and $m$ clauses.
-Conventionally, determining $SAT(\mathcal{F})$ requires searching the space $\{0, 1\}^n$.
+### 2.1 Problem Space
 
-### 2.2 The Variable Interaction Graph (VIG)
-We define a mapping function $\Phi: \mathcal{F} \rightarrow G$, where $G = (V, E)$ is an undirected graph:
-* **Vertices $V$**: Represents the variables $\{x_1, ..., x_n\}$.
-* **Edges $E$**: An edge $(x_i, x_j)$ exists if variables $x_i$ and $x_j$ appear together in at least one clause.
+Let $\mathcal{F}$ be a Boolean formula in Conjunctive Normal Form (CNF) with $n$ variables and $m$ clauses.  
+Conventionally, determining $\mathrm{SAT}(\mathcal{F})$ requires reasoning over the assignment space $\{0,1\}^n$.
 
-This graph $G$ represents the **constraints' skeleton** stripped of their specific truth values (literals).
+### 2.2 Variable Interaction Graph (VIG)
 
-### 2.3 The SRC Structure Kernel ($\mathcal{K}$)
-The core innovation of SRC is extracting a "Structure Kernel" from $G$. We utilize Spectral Graph Theory to define this kernel.
+We define a mapping
+\[
+  \Phi: \mathcal{F} \rightarrow G
+\]
+where $G = (V, E)$ is an undirected graph:
 
-Let $A$ be the adjacency matrix of $G$, and $D$ be the degree matrix. The **Normalized Laplacian Matrix** is defined as:
-$$\mathcal{L} = I - D^{-1/2} A D^{-1/2}$$
+- **Vertices $V$**: variables $\{x_1, \dots, x_n\}$.
+- **Edges $E$**: an edge $(x_i, x_j)$ exists if variables $x_i$ and $x_j$ co-occur in at least one clause.
 
-The **SRC Kernel** is defined as the ordered sequence of the top-$k$ eigenvalues (Spectral Fingerprint):
-$$\mathcal{K}_{SRC}(\mathcal{F}) = \lambda(\mathcal{L}) = [\lambda_1, \lambda_2, ..., \lambda_k]$$
+The graph $G$ captures the **skeleton of constraints**, abstracting away concrete literal polarity (negation).
 
-Where $0 \le \lambda_i \le 2$.
+### 2.3 SRC Structure Kernel $\mathcal{K}$
+
+The core innovation of SRC is to extract a **Structure Kernel** from $G$ using spectral graph theory.
+
+Let $A$ be the adjacency matrix of $G$ and $D$ be the degree matrix. The **normalized Laplacian** is defined as:
+\[
+  \mathcal{L} = I - D^{-1/2} A D^{-1/2}.
+\]
+
+We then define the **SRC Kernel** as a spectral fingerprint of $\mathcal{L}$:
+
+\[
+  \mathcal{K}_{SRC}: \mathcal{F} \to \mathbb{R}^k,\quad
+  \mathcal{K}_{SRC}(\mathcal{F}) = [\lambda_1, \lambda_2, \dots, \lambda_k],
+\]
+
+where $\lambda_i$ are the ordered eigenvalues of $\mathcal{L}$ (e.g., largest-$k$ or smallest-$k$), and $0 \le \lambda_i \le 2$.
+
+In practice, $k \ll n$, so $\mathcal{K}_{SRC}$ acts as a **dimension-collapsing map** from discrete logic space to a continuous, low-dimensional structural manifold.
 
 ---
 
-## 3. The Mechanism: Why It Works
+## 3. Why Spectral Features Predict Satisfiability
 
-Why can eigenvalues predict satisfiability?
+### 3.1 Connectivity and Hardness
 
-1.  **Connectivity & Hardness**:
-    The spectrum of the Laplacian ($\lambda$) measures how well-connected or "tangled" the graph is.
-    * **Low $\lambda$ values** (near 0) indicate disconnected components (easy to solve via divide-and-conquer).
-    * **High $\lambda$ values** (near 2) indicate bipartite-like structures (often conflicting constraints).
-    * **Spectral Gap**: The distribution of eigenvalues reflects the "expansion" properties of the graph.
+The spectrum of the Laplacian encodes global connectivity patterns of $G$:
 
-2.  **The Phase Transition Proxy**:
-    In Random 3-SAT, the hardness peaks at a clause-to-variable ratio $\alpha \approx 4.26$. SRC posits that this phase transition has a **distinct spectral signature**. The model learns to identify the "shape" of unsatisfiable constraint loops in the spectral domain.
+- **Small eigenvalues** (near 0) indicate loosely connected or decomposable structure (amenable to divide-and-conquer).
+- **Large eigenvalues** (near 2) and spectral gaps reflect expansion, bottlenecks, and potential conflict-rich substructures.
+
+Intuitively, **“hard” or UNSAT-like** instances tend to exhibit tightly coupled, high-expansion interaction graphs, whereas **“easy” or SAT-like** instances often decompose into more weakly connected components.
+
+### 3.2 Phase Transition Signature
+
+In random 3-SAT, hardness peaks around clause-to-variable ratio $\alpha \approx 4.26$.  
+The SRC viewpoint conjectures that this **phase transition** is accompanied by a distinct change in the spectral distribution of the VIG.
+
+Rather than searching the assignment space, SRC learns a **decision boundary in spectral space** that separates “typically SAT” from “typically UNSAT” based on these topological signatures.
 
 ---
 
 ## 4. SRC Model Architecture
 
-The SRC prediction process is a function $f$:
-$$P(SAT | \mathcal{F}) \approx f(\mathcal{K}_{SRC}(\mathcal{F}))$$
+We define the SRC predictor as:
+\[
+  P(\mathrm{SAT} \mid \mathcal{F}) \approx f\big(\mathcal{K}_{SRC}(\mathcal{F})\big),
+\]
+where:
 
-Where:
-* $\mathcal{F}$ is the input 3-SAT instance.
-* $\mathcal{K}_{SRC}$ is the spectral extraction ($O(n^3)$ or faster).
-* $f$ is a lightweight linear classifier (e.g., Logistic Regression).
+- $\mathcal{F}$ is a 3-SAT instance,
+- $\mathcal{K}_{SRC}(\mathcal{F}) \in \mathbb{R}^k$ is its spectral fingerprint,
+- $f$ is a lightweight classifier (e.g., logistic regression).
 
-**Computational Advantage:**
-* Traditional Solver: Worst case $O(2^n)$ (Exponential).
-* SRC Inference: $O(n^3)$ (Polynomial) for feature extraction + $O(1)$ for classification.
+### 4.1 Computational Complexity
+
+- **Traditional SAT Solver:** worst-case exponential in $n$ (e.g. $O(2^n)$).
+- **SRC Inference Pipeline:**
+  - Feature extraction via eigen-decomposition of $\mathcal{L}$: $O(n^3)$ in the dense case (potentially near-linear with sparse / approximate methods).
+  - Classification via $f$: typically $O(k)$.
+
+Thus, SRC provides a **polynomial-time surrogate** for approximating SAT/UNSAT labels on random instances, purely from structural information.
 
 ---
 
-## 5. Experimental Validation
+## 5. Experimental Validation (SRC-SAT-Topology)
 
-Our experiments on `SRC-SAT-Topology` (N=30,000) confirm that:
-1.  **Information Retention**: The Structure Kernel $\mathcal{K}$ retains enough information to classify SAT/UNSAT with **~84% accuracy**.
-2.  **Robustness**: The spectral signal is invariant to variable permutation and robust across random seeds.
-3.  **Convergence**: The learning curve converges, suggesting a theoretical limit to how much logical information is encoded purely in the graph topology.
+In the `SRC-SAT-Topology` experiments (up to $N=30{,}000$ instances), we observe:
 
-## 6. Future Direction: Is P = NP?
-SRC does not claim to solve NP-complete problems exactly (which would imply $P=NP$). Instead, it suggests that **average-case complexity** is structurally collapsible.
-The success of SRC hints that the "hard" instances of NP problems share specific, detectable topological fingerprints that distinguish them from "easy" or "impossible" instances.
+1. **Information Retention**  
+   The structure kernel $\mathcal{K}_{SRC}$ alone supports **≈84% accuracy** in distinguishing SAT vs UNSAT, far above the random baseline (50%).
+
+2. **Robustness Across Seeds**  
+   Results are stable over multiple random seeds and are invariant under variable permutations, indicating that the signal is genuinely topological rather than spurious.
+
+3. **Convergence Behavior**  
+   As the sample size increases (5k → 10k → 30k), accuracy converges rather than fluctuating wildly, suggesting that the underlying spectral–logical relationship is stable and learnable.
+
+---
+
+## 6. Future Directions: Average-Case Collapsibility of NP
+
+SRC does **not** claim to exactly solve NP-complete problems in polynomial time (which would imply $P = NP$). Instead, it provides evidence that:
+
+- For random 3-SAT in a specific regime,
+- The **average-case behavior** of SAT vs UNSAT can be **partially collapsed** into a low-dimensional structural manifold.
+
+This raises several theoretical questions:
+
+1. Which families of NP problems admit such **structure-level surrogate predictors**?
+2. Can we characterize the **topological fingerprints of truly hard instances** (e.g., worst-case UNSAT)?
+3. How does SRC interact with other paradigms such as message-passing, belief propagation, or neural SAT solvers?
+
+These questions form the next stage of the SRC research program.
